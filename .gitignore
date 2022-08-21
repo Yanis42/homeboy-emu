@@ -1,5 +1,6 @@
 # Compiler binaries
 mwcc_compiler/
+powerpc-eabi-as
 
 # Build artifacts
 build/
@@ -7,6 +8,7 @@ build/
 *.obj
 *.elf
 *.map
+*.out
 
 # IDE artifacts
 .vscode/

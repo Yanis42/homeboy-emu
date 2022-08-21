@@ -32,12 +32,12 @@ MWCC_VERSION := 1.1
 
 # Programs
 ifeq ($(WINDOWS),1)
-	WINE := 
+	WINE :=
 else
 	WINE := wine
 endif
 
-AS := $(DEVKITPPC)/bin/powerpc-eabi-as
+AS := tools/powerpc-eabi-as
 OBJCOPY := $(DEVKITPPC)/bin/powerpc-eabi-objcopy
 OBJDUMP := $(DEVKITPPC)/bin/powerpc-eabi-objdump
 CPP := cpp -P
