@@ -50,6 +50,7 @@ POSTPROC := tools/postprocess.py
 
 # Options
 INCLUDES := -i include -i include/dolphin/ -i src
+NON_MATCHING := 1
 
 # Assembler Flags
 ASFLAGS := -mgekko -I include
@@ -73,8 +74,10 @@ default: all
 
 # Compare to the checksum of a stripped original
 all: $(ELF)
+ifeq ($(NON_MATCHING),0)
 	@md5sum $(COMPARE_TO)
 	@md5sum -c checksum.md5
+endif
 
 ALL_DIRS := build $(BUILD_DIR) $(addprefix $(BUILD_DIR)/,$(SRC_DIRS) $(ASM_DIRS))
 
