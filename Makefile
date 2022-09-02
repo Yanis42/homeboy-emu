@@ -10,8 +10,14 @@ TARGET := SIM
 
 BUILD_DIR := build/$(TARGET)
 
-SRC_DIRS := $(shell find src/ -type f -name '*.c')
-ASM_DIRS := $(shell find asm/ -type f -name '*.s')
+# SRC_DIRS := $(shell find src/ -type f -name '*.c')
+# ASM_DIRS := $(shell find asm/ -type f -name '*.s')
+
+SRC_DIRS := $(shell find src -type d)
+ASM_DIRS := $(shell find asm -type d -not -path "asm/non_matching*") $(shell find data -type d)
+
+C_FILES       := $(foreach dir,$(SRC_DIRS), $(wildcard $(dir)/*.c))
+S_FILES       := $(foreach dir,$(ASM_DIRS), $(wildcard $(dir)/*.s))
 
 # Inputs
 LDSCRIPT := $(BUILD_DIR)/ldscript.lcf
@@ -23,6 +29,9 @@ COMPARE_TO := $(BUILD_DIR)/$(TARGET)_S.elf
 
 # Object files in link order
 include obj_files.mk
+
+GLOBAL_ASM_C_FILES != grep -rl 'GLOBAL_ASM(' $(C_FILES)
+GLOBAL_ASM_O_FILES = $(addprefix $(BUILD_DIR)/,$(GLOBAL_ASM_C_FILES:.c=.o))
 
 #-------------------------------------------------------------------------------
 # Tools
@@ -46,11 +55,12 @@ LD := $(WINE) tools/mwcc_compiler/$(MWCC_VERSION)/mwldeppc.exe
 SHA1SUM := sha1sum
 PYTHON := python3
 
-POSTPROC := tools/postprocess.py
+ASM_PROCESSOR_DIR := tools/asm_processor
+ASM_PROCESSOR := $(ASM_PROCESSOR_DIR)/compile.sh
 
 # Options
 INCLUDES := -i include -i include/dolphin/ -i src
-NON_MATCHING := 1
+NON_MATCHING := 0
 
 # Assembler Flags
 ASFLAGS := -mgekko -I include
@@ -61,8 +71,6 @@ LDFLAGS := -map $(MAP) -fp hard -nodefaults -w off
 # Compiler Flags
 CFLAGS := -Cpp_exceptions off -proc gekko -fp hard -O4,p -nodefaults -msgstyle gcc $(INCLUDES)
 
-# postprocess
-PROCFLAGS := -fprologue-fixup=old_stack
 
 #-------------------------------------------------------------------------------
 # Recipes
@@ -73,7 +81,7 @@ PROCFLAGS := -fprologue-fixup=old_stack
 default: all
 
 # Compare to the checksum of a stripped original
-all: $(ELF)
+all: $(ELF) | tools
 ifeq ($(NON_MATCHING),0)
 	@md5sum $(COMPARE_TO)
 	@md5sum -c checksum.md5
@@ -89,9 +97,13 @@ DUMMY != mkdir -p $(ALL_DIRS)
 $(LDSCRIPT): ldscript.lcf
 	$(CPP) -MMD -MP -MT $@ -MF $@.d -I include/ -I . -DBUILD_DIR=$(BUILD_DIR) -o $@ $<
 
-$(ELF): $(O_FILES) $(LDSCRIPT)
+$(ELF): $(O_FILES) $(GLOBAL_ASM_O_FILES) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) -o $@ -lcf $(LDSCRIPT) $(O_FILES)
 	$(OBJCOPY) $(ELF) $(COMPARE_TO) -S
+
+$(GLOBAL_ASM_O_FILES): BUILD_C := $(ASM_PROCESSOR) "$(CC) $(CFLAGS) $(OPT_FLAGS)" "$(AS) $(ASFLAGS)"
+
+BUILD_C ?= $(CC) $(CFLAGS) $(OPT_FLAGS) -c -o
 
 # Strip debugging sections and .mwcats.text section so only the important sections remain
 # Tested to ensure it doesn't crash at least on Dolphin
