@@ -15,7 +15,12 @@ SIM_S is a version of the build with stripped symbols which when diffed against 
 
 ### Required tools
 
-* [devkitPro](https://devkitpro.org/wiki/Getting_Started)
+* devkitPro:
+    - ``wget https://wii.leseratte10.de/devkitPro/devkitPPC/r38%20%282020-07-25%29/devkitPPC-r38-1-linux_x86_64.pkg.tar.xz``
+    - ``xz -d -v devkitPPC-r38-1-linux_x86_64.pkg.tar.xz``
+    - ``tar -xvf devkitPPC-r38-1-linux_x86_64.pkg.tar``
+    - ``sudo cp -r ./opt/devkitpro /opt/``
+    - ``echo 'export DEVKITPPC="/opt/devkitpro/devkitPPC"' >> ~/.bashrc && source ~/.bashrc``
 * python3
 
 ### Instructions
