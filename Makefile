@@ -45,6 +45,8 @@ CC := $(WINE) tools/mwcc_compiler/$(MWCC_VERSION)/mwcceppc.exe
 LD := $(WINE) tools/mwcc_compiler/$(MWCC_VERSION)/mwldeppc.exe
 SHA1SUM := sha1sum
 PYTHON := python3
+ELF2DOL := tools/elf2dol/elf2dol
+DOL := $(BUILD_DIR)/main.dol
 
 POSTPROC := tools/postprocess.py
 
@@ -63,6 +65,11 @@ CFLAGS := -Cpp_exceptions off -proc gekko -fp hard -O4,p -nodefaults -msgstyle g
 # postprocess
 PROCFLAGS := -fprologue-fixup=old_stack
 
+# elf2dol needs to know these in order to calculate sbss correctly.
+SDATA_PDHR 	:= 9
+SBSS_PDHR 	:= 10
+TARGET_COL := gc
+
 #-------------------------------------------------------------------------------
 # Recipes
 #-------------------------------------------------------------------------------
@@ -72,11 +79,15 @@ PROCFLAGS := -fprologue-fixup=old_stack
 default: all
 
 # Compare to the checksum of a stripped original
-all: $(ELF)
+all: $(DOL)
 	@md5sum $(COMPARE_TO)
 	@md5sum -c checksum.md5
+	
 
 ALL_DIRS := build $(BUILD_DIR) $(addprefix $(BUILD_DIR)/,$(SRC_DIRS) $(ASM_DIRS))
+
+$(DOL): $(ELF)
+	$(ELF2DOL) $< $@ $(SDATA_PDHR) $(SBSS_PDHR) $(TARGET_COL)
 
 # Make sure build directory exists before compiling anything
 DUMMY != mkdir -p $(ALL_DIRS)
@@ -96,9 +107,11 @@ $(ELF): $(O_FILES) $(LDSCRIPT)
 setup:
 	$(OBJCOPY) SIM_original.elf SIM.elf -R .mwcats.text -g
 	$(OBJCOPY) SIM.elf SIM_S.elf -S
+	$(MAKE) -C tools/elf2dol
 
 clean:
 	rm -f -d -r build
+	$(MAKE) -C tools/elf2dol clean
 #$(MAKE) -C tools clean
 
 #tools:

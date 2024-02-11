@@ -7,6 +7,7 @@ build/
 *.obj
 *.elf
 *.map
+tools/elf2dol/elf2dol
 
 # IDE artifacts
 .vscode/
